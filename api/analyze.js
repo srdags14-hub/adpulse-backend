@@ -31,12 +31,14 @@ export default async function handler(req, res) {
         "X-Title": "AdPulse"
       },
       body: JSON.stringify({
-        model: "openrouter/free",
+        model: "meta-llama/llama-3.2-11b-vision-instruct:free",
+        provider: {
+          sort: "throughput"
+        },
         messages: [
           {
             role: "system",
-            content:
-              "Eres un analista de creatividades para redes sociales. Responde siempre en JSON valido."
+            content: "Eres un analista de creatividades para redes sociales. Responde siempre en JSON valido."
           },
           {
             role: "user",
@@ -56,12 +58,12 @@ export default async function handler(req, res) {
             ]
           }
         ],
-        temperature: 0.3
+        temperature: 0.3,
+        max_tokens: 500
       })
     });
 
     const data = await openrouterResponse.json();
-
     return res.status(openrouterResponse.status).json(data);
   } catch (error) {
     return res.status(500).json({
