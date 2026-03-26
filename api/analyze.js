@@ -8,7 +8,7 @@ export default async function handler(req, res) {
   }
 
   if (req.method === "GET") {
-    return res.status(200).json({ ok: true, message: "AdPulse API online" });
+    return res.status(200).json({ ok: true, message: "AdPulse API online with OpenRouter" });
   }
 
   if (req.method !== "POST") {
@@ -22,36 +22,47 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "imageBase64 is required" });
     }
 
-    const openaiResponse = await fetch("https://api.openai.com/v1/responses", {
+    const openrouterResponse = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`
+        "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
+        "HTTP-Referer": "https://adpulse-backend.vercel.app",
+        "X-Title": "AdPulse"
       },
       body: JSON.stringify({
-        model: "gpt-4.1",
-        input: [
+        model: "openrouter/free",
+        messages: [
+          {
+            role: "system",
+            content:
+              "Eres un analista de creatividades para redes sociales. Responde siempre en JSON valido."
+          },
           {
             role: "user",
             content: [
               {
-                type: "input_text",
+                type: "text",
                 text:
-                  "Analiza esta creatividad para redes sociales. Devuelve JSON con score_global, fortalezas, riesgos y mejoras_priorizadas."
+                  "Analiza esta creatividad para redes sociales y devuelve SOLO JSON con esta estructura exacta: " +
+                  "{\"score_global\": number, \"fortalezas\": string[], \"riesgos\": string[], \"mejoras_priorizadas\": string[], \"attention_order\": string[] }"
               },
               {
-                type: "input_image",
-                image_url: `data:image/png;base64,${imageBase64}`
+                type: "image_url",
+                image_url: {
+                  url: `data:image/png;base64,${imageBase64}`
+                }
               }
             ]
           }
-        ]
+        ],
+        temperature: 0.3
       })
     });
 
-    const data = await openaiResponse.json();
+    const data = await openrouterResponse.json();
 
-    return res.status(openaiResponse.status).json(data);
+    return res.status(openrouterResponse.status).json(data);
   } catch (error) {
     return res.status(500).json({
       error: "Error en análisis",
